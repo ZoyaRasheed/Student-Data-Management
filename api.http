@@ -1,0 +1,77 @@
+# Description:
+# This file contains cURL requests for testing API endpoints using the REST Client extension.
+# Base URL: http://127.0.0.1:8000
+
+@baseUrl = http://127.0.0.1:8000
+
+### Server Health Check
+# Checks if the server is running and accessible.
+curl -X GET {{baseUrl}}/
+
+### Signup Teacher
+# Registers a new teacher account.
+curl -X POST {{baseUrl}}/api/v1/auth/?type=signup_teacher \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Ayesha",
+       "email": "ayesha@example.com",
+       "password": "securepassword123",
+       "phone_number": "+1234567890",
+       "teaching_class": 1
+     }'
+
+### Signup Student
+# Registers a new student account.
+curl -X POST {{baseUrl}}/api/v1/auth/?type=signup_student \
+     -H "Content-Type: application/json" \
+     -d '{
+       "full_name": "zoya",
+       "email": "zoya@example.com",
+       "password": "studentpassword123",
+       "student_class": 1,
+       "parents_email": "parent@example.com",
+       "parents_phone_number": "+0987654321"
+     }'
+
+### Teacher Login
+# Authenticates a teacher using email as the identifier.
+curl -X POST {{baseUrl}}/api/v1/auth/?type=teacher_login \
+     -H "Content-Type: application/json" \
+     -d '{
+       "email": "ayesha@example.com",
+       "password": "securepassword123"
+     }'
+
+### Student Login
+# Authenticates a student using ID as the identifier.
+curl -X POST {{baseUrl}}/api/v1/auth/?type=student_login \
+     -H "Content-Type: application/json" \
+     -d '{
+       "email": "zoya@example.com",
+       "password": "studentpassword123"
+     }'
+
+### Change Password
+# Allows an authenticated user to change their password.
+curl -X POST {{baseUrl}}/api/v1/user/?type=change_password \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Token YOUR_AUTH_TOKEN" \
+     -d '{
+       "old_password": "securepassword123",
+       "new_password": "newpassword456"
+     }'
+
+### Get Teacher Details
+# Retrieves details of a teacher using their email.
+curl -X GET "{{baseUrl}}/api/v1/user/?type=get_teacher_details" \
+     -H "Authorization: Token 687581159361461995ac3e865bf57a6aff7e386e"
+
+### Get Student Details
+# Retrieves details of a student using their student ID.
+curl -X GET "{{baseUrl}}/api/v1/user/?type=get_student_details" \
+     -H "Authorization: Token 33c6250f11cacf576c5f047f2cb381480119b96f"
+
+### Logout
+# Logs out the authenticated user by invalidating their token.
+curl -X GET {{baseUrl}}/api/v1/user/?type=logout \
+     -H "Authorization: Token 33c6250f11cacf576c5f047f2cb381480119b96f"
