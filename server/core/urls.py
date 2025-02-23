@@ -1,8 +1,7 @@
-"""
-URL configuration for core project.
+"""core URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
+    https://docs.djangoproject.com/en/3.2/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -21,6 +20,6 @@ from .views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', healthCheck.as_view()),
     path('api/v1/', include('app.urls')),
+    path('', healthCheck.as_view()),
 ]

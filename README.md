@@ -9,7 +9,6 @@ The Student Management System allows teachers and students to interact through a
 - Teachers can add marks
 - Students can view marks
 
----
 
 ## Installation and Setup
 
@@ -20,7 +19,7 @@ The Student Management System allows teachers and students to interact through a
 ### Steps to Start
 1. **Navigate to the server directory:**
 ```bash
-cd /server
+cd server
 ```
 
 2. **Create a virtual environment:**
@@ -32,9 +31,9 @@ python -m venv env
 
 3. **Activate the virtual environment:**
 ```bash
-source ./env/bin/activate
+source env/bin/activate
 # or (for Windows)
-source ./env/Scripts/activate
+.env\\Scripts\\activate
 ```
 
 4. **Install dependencies:**
@@ -45,14 +44,13 @@ pip install -r requirements.txt
 5. **Apply database migrations:**
 ```bash
 python manage.py migrate
-python manage.py makemigrations
 ```
 
-6. **Create a superuser for admin access:**
+6. **Seed the database:**
 ```bash
-python manage.py createsuperuser
+python seeder.py
 ```
-Follow the prompts to set up the admin credentials.
+(This will create initial classes, subjects, and roles)
 
 7. **Start the development server:**
 ```bash
@@ -73,4 +71,5 @@ Access the application at [http://127.0.0.1:8000](http://127.0.0.1:8000)
 ## Technology Stack
 - Backend: Django
 - API: Django REST Framework
-- Database: SQLite (default, can be changed as needed)
+- Database: Mongodb
+

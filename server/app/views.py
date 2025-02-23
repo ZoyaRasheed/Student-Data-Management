@@ -3,16 +3,21 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import User, Teacher, Student
-from rest_framework.authentication import TokenAuthentication
+from .models import *
+import jwt
+import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from .enums import *
+
+SECRET_KEY = "Q!E2R3S4"
 
 @method_decorator(csrf_exempt, name='dispatch')
-class AuthAPIView(APIView):
-    permission_classes = [AllowAny]
+class serviceInfo(APIView):
+    def get(self, request):
+        return Response({"success": True, "message": "Welcome to our API service."}, status=status.HTTP_200_OK)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class auth(APIView):
     def post(self, request):
         request_type = request.GET.get('type')
         if request_type == 'signup_teacher':
@@ -29,204 +34,101 @@ class AuthAPIView(APIView):
     def sign_up_teacher(self, request):
         name = request.data.get('name')
         email = request.data.get('email')
+        teaching_class = request.data.get('teaching_class')
         password = request.data.get('password')
         phone_number = request.data.get('phone_number')
-        teaching_class = request.data.get('teaching_class')
 
-        if not all([name, email, password, phone_number, teaching_class]):
+        if not all([name, email, teaching_class, password, phone_number]):
             return Response({"success": False, "message": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(email=email).exists():
-            return Response({"success": False, "message": "Teacher with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        hashed_password = generate_password_hash(password)
 
-        try:
-            user = User.objects.create_user(
-                email=email,
-                password=password,
-                first_name=name,
-                user_type='teacher'
-            )
-            Teacher.objects.create(user=user, phone_number=phone_number, teaching_class=teaching_class)
-            return Response({"success": True, "message": "Teacher registered successfully"}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        role = roles_collection.find_one({"name": Role.TEACHER.value})
+        if not role:
+            return Response({"success": False, "message": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user_class = class_collection.find_one({"name": ClassEnum[teaching_class].value})
+        if not user_class:
+            return Response({"success": False, "message": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user_collection.insert_one({
+            "role_id": role["_id"],
+            "role": Role.TEACHER.value,
+            "name": name,
+            "email": email,
+            "class_id": user_class["_id"],
+            "class": ClassEnum[teaching_class].value,
+            "phone_number": phone_number,
+            "password": hashed_password
+        })
+
+        return Response({"success": True, "message": "Teacher signed up successfully"}, status=status.HTTP_201_CREATED)
 
     def sign_up_student(self, request):
-        full_name = request.data.get('full_name')
+        name = request.data.get('full_name')
         email = request.data.get('email')
         password = request.data.get('password')
         student_class = request.data.get('student_class')
         parents_email = request.data.get('parents_email')
         parents_phone_number = request.data.get('parents_phone_number')
 
-        if not all([full_name, email, password, student_class, parents_email, parents_phone_number]):
+        if not all([name, email, password, student_class, parents_email, parents_phone_number]):
             return Response({"success": False, "message": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(email=email).exists():
-            return Response({"success": False, "message": "Student with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        hashed_password = generate_password_hash(password)
 
-        try:
-            user = User.objects.create_user(
-                email=email,
-                password=password,
-                first_name=full_name,
-                user_type='student'
-            )
-            Student.objects.create(
-                user=user,
-                full_name=full_name,
-                student_class=student_class,
-                parents_email=parents_email,
-                parents_phone_number=parents_phone_number
-            )
-            return Response({"success": True, "message": "Student registered successfully"}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        role = roles_collection.find_one({"name": Role.STUDENT.value})
+        if not role:
+            return Response({"success": False, "message": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user_class = class_collection.find_one({"name": ClassEnum[student_class].value})
+        if not user_class:
+            return Response({"success": False, "message": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user_collection.insert_one({
+            "role_id": role["_id"],
+            "role": Role.STUDENT.value,
+            "name": name,
+            "email": email,
+            "class_id": user_class["_id"],
+            "class": ClassEnum[student_class].value,
+            "parents_email": parents_email,
+            "parents_phone_number": parents_phone_number,
+            "password": hashed_password
+        })
+
+        return Response({"success": True, "message": "Student signed up successfully"}, status=status.HTTP_201_CREATED)
 
     def teacher_login(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        if not all([email, password]):
-            return Response({"success": False, "message": "Both email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = authenticate(request, email=email, password=password)
-            
-            if user and user.user_type == 'teacher':
-                token, _ = Token.objects.get_or_create(user=user)
-                teacher = Teacher.objects.get(user=user)
-                return Response({
-                    "success": True,
-                    "message": "Login successful",
-                    "response": {
-                        "user_type": user.user_type,
-                        "email": user.email,
-                        "name": user.first_name,
-                        "teaching_class": teacher.teaching_class,
-                        "token": token.key
-                    }
-                }, status=status.HTTP_200_OK)
+        user = user_collection.find_one({"email": email, "role": Role.TEACHER.value})
+        if not user or not check_password_hash(user['password'], password):
             return Response({"success": False, "message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload = {
+            "user_id": str(user['_id']),
+            "role": user['role'],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+        return Response({"success": True, "message": "Login successful", "token": token}, status=status.HTTP_200_OK)
 
     def student_login(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        if not all([email, password]):
-            return Response({"success": False, "message": "Both email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = authenticate(request, email=email, password=password)
-            
-            if user and user.user_type == 'student':
-                token, _ = Token.objects.get_or_create(user=user)
-                student = Student.objects.get(user=user)
-                return Response({
-                    "success": True,
-                    "message": "Login successful",
-                    "response": {
-                        "user_type": user.user_type,
-                        "email": user.email,
-                        "student_id": student.student_id,
-                        "name": user.first_name,
-                        "student_class": student.student_class,
-                        "token": token.key
-                    }
-                }, status=status.HTTP_200_OK)
+        user = user_collection.find_one({"email": email, "role": Role.STUDENT.value})
+        if not user or not check_password_hash(user['password'], password):
             return Response({"success": False, "message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+        payload = {
+            "user_id": str(user['_id']),
+            "role": user['role'],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
-@method_decorator(csrf_exempt, name='dispatch')
-class UserAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        request_type = request.GET.get('type')
-        if request_type == 'change_password':
-            return self.change_password(request)
-        else:
-            return Response({"success": False, "message": "Invalid request type"}, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request):
-        request_type = request.GET.get('type')
-        if request_type == 'get_teacher_details':
-            return self.get_teacher_details(request)
-        elif request_type == 'get_student_details':
-            return self.get_student_details(request)
-        elif request_type == 'logout':
-            return self.logout(request)
-        else:
-            return Response({"success": False, "message": "Invalid request type"}, status=status.HTTP_400_BAD_REQUEST)
-
-    def change_password(self, request):
-        user = request.user
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
-
-        if not all([old_password, new_password]):
-            return Response({"success": False, "message": "Both old and new passwords are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if user.check_password(old_password):
-            user.set_password(new_password)
-            user.save()
-            # Create new token after password change
-            Token.objects.filter(user=user).delete()
-            new_token = Token.objects.create(user=user)
-            return Response({
-                "success": True, 
-                "message": "Password changed successfully",
-                "new_token": new_token.key
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({"success": False, "message": "Old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-
-    def get_teacher_details(self, request):
-        try:
-            user = request.user
-            teacher = Teacher.objects.filter(user=user).first()
-
-            if not teacher:
-                return Response({"success": False, "message": "Teacher not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            data = {
-                "name": teacher.user.first_name,
-                "email": teacher.user.email,
-                "phone_number": teacher.phone_number,
-                "teaching_class": teacher.teaching_class
-            }
-            return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def get_student_details(self, request):
-        try:
-            user = request.user
-            student = Student.objects.filter(user=user).first()
-
-            if not student:
-                return Response({"success": False, "message": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            data = {
-                "student_id": student.student_id,
-                "full_name": student.full_name,
-                "email": student.user.email,
-                "student_class": student.student_class,
-                "parents_email": student.parents_email,
-                "parents_phone_number": student.parents_phone_number
-            }
-            return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def logout(self, request):
-        try:
-            Token.objects.filter(user=request.user).delete()
-            return Response({"success": True, "message": "Logout successful"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success": True, "message": "Login successful", "token": token}, status=status.HTTP_200_OK)
