@@ -45,14 +45,18 @@ pip install -r requirements.txt
 ```bash
 python manage.py migrate
 ```
+6. **Create a `.env` file in the root directory:**
+```plaintext
+MONGO_DB_URL = ""
+```
 
-6. **Seed the database:**
+7. **Seed the database:**
 ```bash
 python seeder.py
 ```
 (This will create initial classes, subjects, and roles)
 
-7. **Start the development server:**
+8. **Start the development server:**
 ```bash
 python manage.py runserver
 ```

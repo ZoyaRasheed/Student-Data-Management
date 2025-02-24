@@ -1,5 +1,5 @@
 from django.db import models
-from config.dbConfig import *
+from config.db import *
 # Create your models here.
 
 user_collection = db['User']

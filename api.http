@@ -51,3 +51,7 @@ curl -X POST {{baseUrl}}/api/v1/auth/?type=student_login \
        "password": "studentpassword123"
      }'
 
+### Self Identification
+# Retrieves the user's identity using their JWT token.
+curl -X GET {{baseUrl}}/api/v1/auth/?type=self_identification \
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjdiY2RhNDRjMzVhODI4YzQ4NTVkOWViIiwicm9sZSI6IlRFQUNIRVIiLCJleHAiOjE3NDA0MzM1MDN9.grfuK3Q2N_AiA4QkFC0U_v75tLVCfonDa68290PSQTo"

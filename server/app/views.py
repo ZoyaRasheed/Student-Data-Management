@@ -4,10 +4,11 @@ from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
-import jwt
+import jwt # type: ignore
 import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash # type: ignore
 from .enums import *
+from middleware.authorization import *
 
 SECRET_KEY = "Q!E2R3S4"
 
@@ -31,6 +32,13 @@ class auth(APIView):
         else:
             return Response({"success": False, "message": "Invalid request type"}, status=status.HTTP_400_BAD_REQUEST)
 
+    def get(self, request):
+        type = request.GET.get('type')
+        if type == 'self_identification':
+            return self.self_identification(request)
+        else:
+            return Response({"success": False, "message": "Invalid request type"}, status=status.HTTP_400_BAD_REQUEST)
+        
     def sign_up_teacher(self, request):
         name = request.data.get('name')
         email = request.data.get('email')
@@ -132,3 +140,18 @@ class auth(APIView):
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
         return Response({"success": True, "message": "Login successful", "token": token}, status=status.HTTP_200_OK)
+
+    @login_required
+    def self_identification(self, request):
+        user_payload = getattr(request, 'user_payload', None)
+        if user_payload:
+            return Response({
+                "success": True,
+                "message": "User identified successfully",
+                "user": user_payload
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "success": False,
+                "message": "User information not available"
+            }, status=status.HTTP_401_UNAUTHORIZED)

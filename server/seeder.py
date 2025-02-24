@@ -1,4 +1,4 @@
-from config.dbConfig import *
+from config.db import *
 
 class_collection = db['Class']
 roles_collection = db['Roles']
