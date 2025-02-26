@@ -55,3 +55,49 @@ curl -X POST {{baseUrl}}/api/v1/auth/?type=student_login \
 # Retrieves the user's identity using their JWT token.
 curl -X GET {{baseUrl}}/api/v1/auth/?type=self_identification \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjdiY2RhNDRjMzVhODI4YzQ4NTVkOWViIiwicm9sZSI6IlRFQUNIRVIiLCJleHAiOjE3NDA0MzM1MDN9.grfuK3Q2N_AiA4QkFC0U_v75tLVCfonDa68290PSQTo"
+
+
+### Add students mark
+# Add marks for a student.
+curl -X POST {{baseUrl}}/api/v1/teacher_service/?type=add_marks \
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjdiY2RhNDRjMzVhODI4YzQ4NTVkOWViIiwicm9sZSI6IlRFQUNIRVIiLCJleHAiOjE3NDA2MDc4Mzh9.-x_eUnKxq9xNLDda8mD5Wuko2LiXdyVN40-GuPdp73I"
+     -H "Content-Type: application/json" \
+     -d '{
+          "student_id": "67bf6d1b2c3115e3119bb5fb",
+          "subjects_marks": {
+               "Math": 10,
+               "Science": 20,
+               "English": 40,
+               "History": 90,
+               "Geography": 100
+          },
+          "exam_name": "Unit Test 2",
+          "total_marks": {
+               "Math": 100,
+               "Science": 100,
+               "English": 100,
+               "History": 100,
+               "Geography": 100
+          }
+     }'
+
+
+### Get students marks
+# Get marks for a student.
+curl -X GET {{baseUrl}}/api/v1/teacher_service/?type=get_student_marks \
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjdiY2RhNDRjMzVhODI4YzQ4NTVkOWViIiwicm9sZSI6IlRFQUNIRVIiLCJleHAiOjE3NDA2MDc4Mzh9.-x_eUnKxq9xNLDda8mD5Wuko2LiXdyVN40-GuPdp73I"
+     -H "Content-Type: application/json" \
+
+### Update student marks
+# Update marks for a specific student using marks_id.
+curl -X POST {{baseUrl}}/api/v1/teacher_service/?type=update_student_marks \
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjdiY2RhNDRjMzVhODI4YzQ4NTVkOWViIiwicm9sZSI6IlRFQUNIRVIiLCJleHAiOjE3NDA2MDc4Mzh9.-x_eUnKxq9xNLDda8mD5Wuko2LiXdyVN40-GuPdp73I" \
+     -H "Content-Type: application/json" \
+     -d '{
+          "marks_id": "67bf847161c044d00fc79d8a",
+          "subjects_marks": {
+               "Math": 15,
+               "Science": 25,
+               "English": 45
+          }
+     }'

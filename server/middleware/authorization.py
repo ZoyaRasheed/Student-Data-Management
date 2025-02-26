@@ -22,34 +22,28 @@ def login_required(view_func):
                             status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            # Decode JWT Token
             decoded_jwt_payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
 
-            # Extract User ID from JWT
             user_id = decoded_jwt_payload.get('user_id')  # Ensure JWT contains 'user_id'
             if not user_id:
                 return Response({"success": False, "message": "Invalid token payload"}, 
                                 status=status.HTTP_401_UNAUTHORIZED)
 
-            # Fetch User Details from MongoDB
             user = user_collection.find_one({"_id": ObjectId(user_id)})
             if not user:
                 return Response({"success": False, "message": "User not found"}, 
                                 status=status.HTTP_404_NOT_FOUND)
 
-            # Fetch Role Details
             role = roles_collection.find_one({"_id": ObjectId(user['role_id'])})
             if not role:
                 return Response({"success": False, "message": "Role not found"}, 
                                 status=status.HTTP_404_NOT_FOUND)
 
-            # Fetch Class Details
             user_class = class_collection.find_one({"_id": ObjectId(user['class_id'])})
             if not user_class:
                 return Response({"success": False, "message": "Class not found"}, 
                                 status=status.HTTP_404_NOT_FOUND)
 
-            # Save Combined Payload to request.user_payload
             request.user_payload = {
                 "user_id": str(user['_id']),
                 "name": user.get("name"),
@@ -58,12 +52,12 @@ def login_required(view_func):
                 "role": {
                     "role_id": str(role['_id']),
                     "role_name": role.get("name", user.get("role")),
-                    "permissions": role.get("permissions", [])  # Include permissions from role
+                    "permissions": role.get("permissions", []) 
                 },
                 "class": {
                     "class_id": str(user_class['_id']),
                     "class_name": user_class.get("name", user.get("class")),
-                    "subjects": user_class.get("subjects", [])  # Include subjects from class
+                    "subjects": user_class.get("subjects", []) 
                 }
             }
 
